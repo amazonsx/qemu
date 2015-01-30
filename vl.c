@@ -124,62 +124,62 @@ int main(int argc, char **argv)
 #define MAX_VIRTIO_CONSOLES 1
 #define MAX_SCLP_CONSOLES 1
 
-static const char *data_dir[16];
-static int data_dir_idx;
-const char *bios_name = NULL;
-enum vga_retrace_method vga_retrace_method = VGA_RETRACE_DUMB;
-DisplayType display_type = DT_DEFAULT;
-static int display_remote;
-const char* keyboard_layout = NULL;
-ram_addr_t ram_size;
-const char *mem_path = NULL;
+static const char *data_dir[16];	/*why 16?  why constant string?*/
+static int data_dir_idx;			/*what's for*/
+const char *bios_name = NULL;		/*why bios need a name, bios type?*/
+enum vga_retrace_method vga_retrace_method = VGA_RETRACE_DUMB;		/*VGA_RETRACE_DUMB/PRECISE for hw/i386/pc.h */
+DisplayType display_type = DT_DEFAULT;		/*sysemu.h enum DisplayType DT_DEFAULT/CURSES/SDL/GTK/NOGRAPHIC/NONE*/
+static int display_remote;			/*what's for*/
+const char* keyboard_layout = NULL;	/*us? apple?*/	
+ram_addr_t ram_size;				/*vm ram_addr_t like 32/64? typedef uint64_t/uint32_t*/
+const char *mem_path = NULL;		/*what's for*/
 int mem_prealloc = 0; /* force preallocation of physical target memory */
-int nb_nics;
-NICInfo nd_table[MAX_NICS];
-int autostart;
-static int rtc_utc = 1;
+int nb_nics;						/*number of nic?*/
+NICInfo nd_table[MAX_NICS];			/*struct NICInfo(macaddr,NetClinetState, name, devaddr)*/
+int autostart;						/*what's for*/
+static int rtc_utc = 1;				/*real time clock?*/
 static int rtc_date_offset = -1; /* -1 means no change */
-QEMUClockType rtc_clock;
-int vga_interface_type = VGA_NONE;
-static int full_screen = 0;
-static int no_frame = 0;
-int no_quit = 0;
+QEMUClockType rtc_clock;			/*enum QEMU_CLOCK_REALTIME/VIRTUAL/HOST/MAX why?*/
+int vga_interface_type = VGA_NONE;	/*graphics card?*/
+static int full_screen = 0;			/*make gui show in full screen?*/
+static int no_frame = 0;			/*what's for*/
+int no_quit = 0;					/*what's for, quit for what?*/
 #ifdef CONFIG_GTK
-static bool grab_on_hover;
+static bool grab_on_hover;			/*eagle on hover, grab prey?*/
 #endif
-CharDriverState *serial_hds[MAX_SERIAL_PORTS];
-CharDriverState *parallel_hds[MAX_PARALLEL_PORTS];
-CharDriverState *virtcon_hds[MAX_VIRTIO_CONSOLES];
-CharDriverState *sclp_hds[MAX_SCLP_CONSOLES];
-int win2k_install_hack = 0;
-int singlestep = 0;
-int smp_cpus = 1;
+CharDriverState *serial_hds[MAX_SERIAL_PORTS];				/*sata?*/ /*why char device*/
+CharDriverState *parallel_hds[MAX_PARALLEL_PORTS];			/*pata?*/
+CharDriverState *virtcon_hds[MAX_VIRTIO_CONSOLES];			/*what's this?*/
+CharDriverState *sclp_hds[MAX_SCLP_CONSOLES];				/*what's this?*/
+int win2k_install_hack = 0;			/*what's for*/
+int singlestep = 0;					/*what's for*/
+int smp_cpus = 1;					/*one processor?*/
 int max_cpus = 0;
-int smp_cores = 1;
-int smp_threads = 1;
+int smp_cores = 1;					/*one core per processor*/
+int smp_threads = 1;				/*one hyper-thread per core*/
 #ifdef CONFIG_VNC
-const char *vnc_display;
+const char *vnc_display;			/*vnc, where is spice*/
 #endif
-int acpi_enabled = 1;
-int no_hpet = 0;
-int fd_bootchk = 1;
-static int no_reboot;
-int no_shutdown = 0;
-int cursor_hide = 1;
-int graphic_rotate = 0;
-const char *watchdog;
-QEMUOptionRom option_rom[MAX_OPTION_ROMS];
-int nb_option_roms;
-int semihosting_enabled = 0;
-int old_param = 0;
-const char *qemu_name;
-int alt_grab = 0;
-int ctrl_grab = 0;
-unsigned int nb_prom_envs = 0;
-const char *prom_envs[MAX_PROM_ENVS];
-int boot_menu;
-static bool boot_strict;
-uint8_t *boot_splash_filedata;
+int acpi_enabled = 1;				/*what's for*/
+int no_hpet = 0;					/*what's for*/
+int fd_bootchk = 1;					/*file descriptor? what's for*/
+static int no_reboot;				/*what's for?, machine power state?*/
+int no_shutdown = 0;				/*what's for?, machine power state?*/
+int cursor_hide = 1;				/*why?*/
+int graphic_rotate = 0;				/*why?*/
+const char *watchdog;				/*different watchdog module in circuit, kernel and userspace, how to cooperate or incorporate*/
+QEMUOptionRom option_rom[MAX_OPTION_ROMS];					/*struct QEMUOptionRom(name, bootindex)*/
+int nb_option_roms;					/*relative with QEMUOptionRom*/
+int semihosting_enabled = 0;		/*what's for?*/
+int old_param = 0;					/*what's for?*/
+const char *qemu_name;				/*what's for?*/
+int alt_grab = 0;					/*what's for?*/
+int ctrl_grab = 0;					/*?*/
+unsigned int nb_prom_envs = 0;		/*prom?*/
+const char *prom_envs[MAX_PROM_ENVS];					/*whats for*/
+int boot_menu;						/*menu for what*/
+static bool boot_strict;			/*whats for*/
+uint8_t *boot_splash_filedata;		/*whats for*/
 size_t boot_splash_filedata_size;
 uint8_t qemu_extra_params_fw[2];
 
@@ -2906,14 +2906,14 @@ out:
 
 int main(int argc, char **argv, char **envp)
 {
-    int i;
-    int snapshot, linux_boot;
-    const char *icount_option = NULL;
-    const char *initrd_filename;
-    const char *kernel_filename, *kernel_cmdline;
-    const char *boot_order;
-    DisplayState *ds;
-    int cyls, heads, secs, translation;
+    int i;									/*for what*/
+    int snapshot, linux_boot;				/*flags for something?*/
+    const char *icount_option = NULL;		/*icount for what*/
+    const char *initrd_filename;			/*how initrd works and which file to load*/
+    const char *kernel_filename, *kernel_cmdline;		/**/
+    const char *boot_order;					/*how many boot orders can be*/
+    DisplayState *ds;						/*A list*/
+    int cyls, heads, secs, translation;		/*How translation works*/
     QemuOpts *hda_opts = NULL, *opts, *machine_opts;
     QemuOptsList *olist;
     int optind;
