@@ -2914,43 +2914,43 @@ int main(int argc, char **argv, char **envp)
     const char *boot_order;					/*how many boot orders can be*/
     DisplayState *ds;						/*A list*/
     int cyls, heads, secs, translation;		/*How translation works*/
-    QemuOpts *hda_opts = NULL, *opts, *machine_opts;
-    QemuOptsList *olist;
-    int optind;
-    const char *optarg;
-    const char *loadvm = NULL;
-    MachineClass *machine_class;
-    const char *cpu_model;
-    const char *vga_model = NULL;
-    const char *qtest_chrdev = NULL;
-    const char *qtest_log = NULL;
-    const char *pid_file = NULL;
-    const char *incoming = NULL;
+    QemuOpts *hda_opts = NULL, *opts, *machine_opts;		/*hard disk related options?*/
+    QemuOptsList *olist;					/*whats for*/
+    int optind;								/*whats for*/
+    const char *optarg;						/*whats for*/
+    const char *loadvm = NULL;				/*whats for*/
+    MachineClass *machine_class;			/*hw/boards.h define the machine class?*/
+    const char *cpu_model;					/*associated with kvm*/
+    const char *vga_model = NULL;			/*the machine vga*/
+    const char *qtest_chrdev = NULL;		/*whats for*/
+    const char *qtest_log = NULL;			/*whats for*/
+    const char *pid_file = NULL;			/*the vm process pid file?*/
+    const char *incoming = NULL;			/*whats for*/
 #ifdef CONFIG_VNC
-    int show_vnc_port = 0;
+    int show_vnc_port = 0;					/*specify a port for vnc display?*/
 #endif
-    bool defconfig = true;
-    bool userconfig = true;
-    const char *log_mask = NULL;
-    const char *log_file = NULL;
-    GMemVTable mem_trace = {
-        .malloc = malloc_and_trace,
-        .realloc = realloc_and_trace,
-        .free = free_and_trace,
+    bool defconfig = true;					/*whats for*/
+    bool userconfig = true;					/*whats for*/
+    const char *log_mask = NULL;			/*why log need a mask*/
+    const char *log_file = NULL;			/*how to log*/
+    GMemVTable mem_trace = {				/*VM Memory Management*/
+        .malloc = malloc_and_trace,			/*malloc, g_trace_malloc*/
+        .realloc = realloc_and_trace,		/*realloc, g_trace_realloc*/
+        .free = free_and_trace,				/*g_trace_free, free*/
     };
-    const char *trace_events = NULL;
-    const char *trace_file = NULL;
-    const ram_addr_t default_ram_size = (ram_addr_t)DEFAULT_RAM_SIZE *
+    const char *trace_events = NULL;		/*why a const string pointer*/
+    const char *trace_file = NULL;			/*file path?*/
+    const ram_addr_t default_ram_size = (ram_addr_t)DEFAULT_RAM_SIZE *		/*128MB?*/
                                         1024 * 1024;
     ram_addr_t maxram_size = default_ram_size;
-    uint64_t ram_slots = 0;
-    FILE *vmstate_dump_file = NULL;
+    uint64_t ram_slots = 0;					/*hardware ram slot?*/
+    FILE *vmstate_dump_file = NULL;			/*whats for*/
 
-    atexit(qemu_run_exit_notifiers);
-    error_set_progname(argv[0]);
-    qemu_init_exec_dir(argv[0]);
+    atexit(qemu_run_exit_notifiers);		/*run qemu_run_exit_notifiers when exit*/
+    error_set_progname(argv[0]);			/*whats for*/
+    qemu_init_exec_dir(argv[0]);			/*TO READ*/
 
-    g_mem_set_vtable(&mem_trace);
+    g_mem_set_vtable(&mem_trace);			
 
     module_call_init(MODULE_INIT_QOM);
 
