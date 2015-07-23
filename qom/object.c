@@ -37,6 +37,9 @@ struct InterfaceImpl
     const char *typename;
 };
 
+/* Emulate the Class mechanism in OOP.
+ * by shixiao
+ */
 struct TypeImpl
 {
     const char *name;
@@ -45,12 +48,23 @@ struct TypeImpl
 
     size_t instance_size;
 
+	/* Define a New Type and its handling funcs.
+	 * Created with type_new, 
+	 * by shixiao 
+	 */
     void (*class_init)(ObjectClass *klass, void *data);
     void (*class_base_init)(ObjectClass *klass, void *data);
     void (*class_finalize)(ObjectClass *klass, void *data);
 
+	/* Just store a pointer !!!!!
+	 * So each type have its own data handling queue ??????
+	 * by shixiao
+	 */
     void *class_data;
 
+	/* Funcs to handle instance of the current type.
+	 * by shixiao
+	 */
     void (*instance_init)(Object *obj);
     void (*instance_post_init)(Object *obj);
     void (*instance_finalize)(Object *obj);
@@ -60,8 +74,12 @@ struct TypeImpl
     const char *parent;
     TypeImpl *parent_type;
 
+	/* Cross Reference, by shixiao */
     ObjectClass *class;
 
+	/* InterfaceImpl = const char *typename, 
+	 * by shixiao
+	 */
     int num_interfaces;
     InterfaceImpl interfaces[MAX_INTERFACES];
 };

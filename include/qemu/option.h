@@ -66,7 +66,11 @@ struct QemuOptsList {
     const char *name;
     const char *implied_opt_name;
     bool merge_lists;  /* Merge multiple uses of option into a single list? */
-    QTAILQ_HEAD(, QemuOpts) head;
+    /* Doublely Linked List with each entry as a QemuOpts 
+     * With &tqh_first & *tqh_last.
+     * by shixiao 
+     */
+    QTAILQ_HEAD(, QemuOpts) head;	
     QemuOptDesc desc[];
 };
 

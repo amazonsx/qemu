@@ -26,6 +26,7 @@ void DSO_STAMP_FUN(void);
  * check fails during module loading */
 void qemu_module_dummy(void);
 
+/* dso: dynamic shared object, by shixiao*/
 #define module_init(function, type)                                         \
 static void __attribute__((constructor)) do_qemu_init_ ## function(void)    \
 {                                                                           \

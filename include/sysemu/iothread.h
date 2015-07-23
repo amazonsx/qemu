@@ -22,9 +22,24 @@
 typedef struct {
     Object parent_obj;
 
+    /* What the relationship between 
+     * a IOThread and a I/O request or a I/O device?
+     * I guess, each I/O device need a IOThread queue?
+     * How does the GuestOS I/O request send to the I/O thread?
+     * by shixiao
+     */
     QemuThread thread;
+    /* Use the GMainLoop IO multiplexing poll mechanism.
+     * by shixiao
+     */
     AioContext *ctx;
+    /* For what?
+     * by shixiao
+     */
     QemuMutex init_done_lock;
+    /* Condition Variable?
+     * by shixiao
+     */
     QemuCond init_done_cond;    /* is thread initialization done? */
     bool stopping;
     int thread_id;

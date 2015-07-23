@@ -323,12 +323,14 @@ struct name {                                                           \
 }
 #define QTAILQ_HEAD(name, type)  Q_TAILQ_HEAD(name, struct type,)
 
+/* Same with QTAILQ_INIT, by shixiao*/
 #define QTAILQ_HEAD_INITIALIZER(head)                                   \
         { NULL, &(head).tqh_first }
 
 #define Q_TAILQ_ENTRY(type, qual)                                       \
 struct {                                                                \
         qual type *tqe_next;            /* next element */              \
+	/* Why use a pointer to *next, by shixiao */
         qual type *qual *tqe_prev;      /* address of previous next element */\
 }
 #define QTAILQ_ENTRY(type)       Q_TAILQ_ENTRY(struct type,)
@@ -336,6 +338,7 @@ struct {                                                                \
 /*
  * Tail queue functions.
  */
+/* Do the same thing with QTAILQ_HEAD_INITIALIZER? by shixiao */
 #define QTAILQ_INIT(head) do {                                          \
         (head)->tqh_first = NULL;                                       \
         (head)->tqh_last = &(head)->tqh_first;                          \

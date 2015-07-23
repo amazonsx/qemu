@@ -595,7 +595,7 @@ static int default_driver_check(QemuOpts *opts, void *opaque)
 /***********************************************************/
 /* QEMU state */
 
-static RunState current_run_state = RUN_STATE_PRELAUNCH;
+static RunState current_run_state = RUN_STATE_PRELAUNCH;	/* VM state or QEMU state? by shixiao */
 
 /* We use RUN_STATE_MAX but any invalid value will do */
 static RunState vmstop_requested = RUN_STATE_MAX;
@@ -4379,6 +4379,7 @@ int main(int argc, char **argv, char **envp)
 
     if (incoming) {
         Error *local_err = NULL;
+		/* Entrance for backup migration vm. by shixiao*/
         qemu_start_incoming_migration(incoming, &local_err);
         if (local_err) {
             error_report("-incoming %s: %s", incoming,

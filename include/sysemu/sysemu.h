@@ -43,6 +43,7 @@ void vm_start(void);
 int vm_stop(RunState state);
 int vm_stop_force_state(RunState state);
 
+/* What the hell is this? by shixiao */
 typedef enum WakeupReason {
     /* Always keep QEMU_WAKEUP_REASON_NONE = 0 */
     QEMU_WAKEUP_REASON_NONE = 0,

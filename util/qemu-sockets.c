@@ -33,7 +33,13 @@
 /* used temporarily until all users are converted to QemuOpts */
 QemuOptsList socket_optslist = {
     .name = "socket",
+	/* {NULL, socket_optslist.head.tqh_first},by shixiao */
     .head = QTAILQ_HEAD_INITIALIZER(socket_optslist.head),
+	/* QemuOptDesc desc[] in QemuOptsList definition.
+	 * While no size specified to desc, 
+	 * how to allocate the space for the struct?
+	 * by shixiao
+	 */
     .desc = {
         {
             .name = "path",
@@ -321,6 +327,7 @@ static int inet_connect_addr(struct addrinfo *addr, bool *in_progress,
 
 static struct addrinfo *inet_parse_connect_opts(QemuOpts *opts, Error **errp)
 {
+	/* NOTE:addrinfo & sockaddr, by shixiao*/
     struct addrinfo ai, *res;
     int rc;
     const char *addr;
@@ -371,15 +378,33 @@ static struct addrinfo *inet_parse_connect_opts(QemuOpts *opts, Error **errp)
  * function succeeds, callback will be called when the connection
  * completes, with the file descriptor on success, or -1 on error.
  */
+/* Why use a callback func to follow the connect operation??????
+ * Why not just use the normal programming ways??????
+ * by shixiao
+ */
 int inet_connect_opts(QemuOpts *opts, Error **errp,
                       NonBlockingConnectHandler *callback, void *opaque)
 {
     Error *local_err = NULL;
+	/* Have struct sockaddr *as_addr in struct addrinfo, 
+	 * Check UNP 11.6 for details
+	 * Why this will be a list of addresses ??????
+	 * Guess: does this func convert the input into every kinds of 
+	 *	sockaddr_xx for protocol-independence ??????
+	 * by shixiao
+	 */
     struct addrinfo *res, *e;
     int sock = -1;
     bool in_progress;
+	/* For nonblocking connection,
+	 * member: fd/addr_list/current_addr/callback/opaque
+	 * by shixiao*/
     ConnectState *connect_state = NULL;
 
+	/* struct addrinfo *res 
+	 * with name to host & service to port translation, 
+	 * by shixiao 
+	 */
     res = inet_parse_connect_opts(opts, errp);
     if (!res) {
         return -1;
@@ -398,6 +423,7 @@ int inet_connect_opts(QemuOpts *opts, Error **errp,
         if (connect_state != NULL) {
             connect_state->current_addr = e;
         }
+		/* Where are you??????? by shixiao */
         sock = inet_connect_addr(e, &in_progress, connect_state, &local_err);
         if (sock >= 0) {
             break;
@@ -410,11 +436,15 @@ int inet_connect_opts(QemuOpts *opts, Error **errp,
         /* wait_for_connect() will do the rest */
         return sock;
     } else {
+		/* CORE!!!!!!
+		 * by shixiao
+		 */
         if (callback) {
             callback(sock, NULL, opaque);
         }
     }
     g_free(connect_state);
+	/* Check TUNP 11.8, by shixiao*/
     freeaddrinfo(res);
     return sock;
 }
@@ -517,6 +547,7 @@ InetSocketAddress *inet_parse(const char *str, Error **errp)
     int to;
     int pos;
 
+	/* 0 means initialize value to 0, by shixiao */
     addr = g_new0(InetSocketAddress, 1);
 
     /* parse address */
@@ -536,6 +567,7 @@ InetSocketAddress *inet_parse(const char *str, Error **errp)
         addr->ipv6 = addr->has_ipv6 = true;
     } else {
         /* hostname or IPv4 addr */
+		/* sscanf formatted input ---- [], by shixiao */
         if (2 != sscanf(str, "%64[^:]:%32[^,]%n", host, port, &pos)) {
             error_setg(errp, "error parsing address '%s'", str);
             goto fail;
@@ -545,6 +577,7 @@ InetSocketAddress *inet_parse(const char *str, Error **errp)
         }
     }
 
+	/* Duplicate the string, FREE with g_free(), by shixiao */
     addr->host = g_strdup(host);
     addr->port = g_strdup(port);
 
@@ -580,6 +613,12 @@ static void inet_addr_to_opts(QemuOpts *opts, const InetSocketAddress *addr)
     bool ipv6 = addr->ipv6 || !addr->has_ipv6;
 
     if (!ipv4 || !ipv6) {
+		/* Init a QemuOpt object &
+		 * Bind it with coresponding QemuOptDesc index &
+		 * set its name/opts/value/str &
+		 * Insert it into the tail of opts
+		 * by shixiao
+		 */
         qemu_opt_set_bool(opts, "ipv4", ipv4);
         qemu_opt_set_bool(opts, "ipv6", ipv6);
     }
@@ -663,22 +702,51 @@ int inet_connect(const char *str, Error **errp)
  *
  * Returns: -1 on immediate error, file descriptor on success.
  **/
+/*
+ *  The definition of NonBlockingConnectHandler is strange, I think!!!!!!
+ *  Why use QemuOpts??????
+ *  by shixiao
+ */
 int inet_nonblocking_connect(const char *str,
                              NonBlockingConnectHandler *callback,
                              void *opaque, Error **errp)
 {
     QemuOpts *opts;
     int sock = -1;
+	/* Defined in qapi-schema.json ,
+	 * @host: str
+	 * @port: str
+	 * by shixiao*/
     InetSocketAddress *addr;
 
     g_assert(callback != NULL);
 
+	/* The str should be:
+	 * prefix=tcp: 
+	 * ip_addr:ip_port,to=xxx,ipv4/ipv6
+	 * by shixiao 
+	 */
     addr = inet_parse(str, errp);
     if (addr != NULL) {
+		/* Init a QemuOpts object &
+		 * Insert it into socket_optslist tail &
+		 * Return it back.
+		 * by shixiao
+		 */
         opts = qemu_opts_create(&socket_optslist, NULL, 0, &error_abort);
+		/* Config host/port/ipv4/ipv6/to as QemuOpt- QemuOpts->QemuOptsList, 
+		 * by shixiao 
+		 */
         inet_addr_to_opts(opts, addr);
+		/* Where are u?????? by shixiao */
         qapi_free_InetSocketAddress(addr);
+		/* There are mass of inet_connect_xx, why use opts?????? 
+		 * by shixiao*/
         sock = inet_connect_opts(opts, errp, callback, opaque);
+		/* There are many resources creating & destroying 
+		 *	again and again.
+		 * Why not just use a auto-variable without managing the memory.
+		 * by shixiao*/
         qemu_opts_del(opts);
     }
     return sock;

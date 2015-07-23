@@ -44,12 +44,27 @@ static void tcp_wait_for_connect(int fd, Error *err, void *opaque)
     } else {
         DPRINTF("migrate connect success\n");
         s->file = qemu_fopen_socket(fd, "wb");
+		/* By Now, we have created several objects, including
+		 * MigrationState->params(MigrationParams(blk&shared))
+		 *               ->xbzrle_cache_size(int)
+		 *               ->total_time(int)
+		 *               ->enabled_capabilities(bool[])
+		 *               ->bandwidth_limit(int)
+		 *               ->state(int)
+		 * QEMUFile->ops(QEMUFileOps)
+		 *         ->opaque(QEMUFileSocket)
+		 * by shixiao
+		 */
         migrate_fd_connect(s);
     }
 }
 
+/*  Entry of TCP migration routine for original vm
+ *  by shixiao
+ */
 void tcp_start_outgoing_migration(MigrationState *s, const char *host_port, Error **errp)
 {
+	/* Generally used for sockets connect in qemu-sockets.c, by shixiao */
     inet_nonblocking_connect(host_port, tcp_wait_for_connect, s, errp);
 }
 

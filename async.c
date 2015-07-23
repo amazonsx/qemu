@@ -31,7 +31,19 @@
 /***********************************************************/
 /* bottom halves (can be seen as timers which expire ASAP) */
 
+/* So this don't have the same meaning with the Linux BH?
+ * by shixiao
+ */
 struct QEMUBH {
+	/* @ctx: Context for BH or BH for Context? with GSource inside
+	 * @cb: typedef void QEMUBHFunc(void *opaque);
+	 * @opaque: Parameters for QEMUBHFunc?
+	 * @next: this is a queue?
+	 * @scheduled: how to schedule? qemu_bh_schedule?
+	 * @idle: ?????? qemu_bh_schedule_idle. idle event source?
+	 * @deleted: ?????? qemu_bh_delete?
+	 * by shixiao
+	 */
     AioContext *ctx;
     QEMUBHFunc *cb;
     void *opaque;
@@ -51,6 +63,16 @@ QEMUBH *aio_bh_new(AioContext *ctx, QEMUBHFunc *cb, void *opaque)
     qemu_mutex_lock(&ctx->bh_lock);
     bh->next = ctx->first_bh;
     /* Make sure that the members are ready before putting bh into list */
+	/* Set a Memory Barrier !!!!!! Why ??????
+	#ifndef smp_wmb
+	#ifdef __ATOMIC_RELEASE
+	#define smp_wmb()   __atomic_thread_fence(__ATOMIC_RELEASE)
+	#else
+	#define smp_wmb()   __sync_synchronize()
+	#endif
+	#endif
+	* by shixiao
+	*/
     smp_wmb();
     ctx->first_bh = bh;
     qemu_mutex_unlock(&ctx->bh_lock);
@@ -159,6 +181,10 @@ aio_compute_timeout(AioContext *ctx)
     int timeout = -1;
     QEMUBH *bh;
 
+	/* 1 Context(GSource) corresponds with n(>=0) Bottom Halves(fds)
+	 * So there is a List!!!!! 
+	 * by shixiao 
+	 */
     for (bh = ctx->first_bh; bh; bh = bh->next) {
         if (!bh->deleted && bh->scheduled) {
             if (bh->idle) {
@@ -173,6 +199,7 @@ aio_compute_timeout(AioContext *ctx)
         }
     }
 
+	/* ?????? by shixiao */
     deadline = timerlistgroup_deadline_ns(&ctx->tlg);
     if (deadline == 0) {
         return 0;
@@ -189,6 +216,7 @@ aio_ctx_prepare(GSource *source, gint    *timeout)
     /* We assume there is no timeout already supplied */
     *timeout = qemu_timeout_ns_to_ms(aio_compute_timeout(ctx));
 
+	/* return false in aio-posix.c, by shixiao*/
     if (aio_prepare(ctx)) {
         *timeout = 0;
     }
@@ -237,6 +265,14 @@ aio_ctx_finalize(GSource     *source)
 }
 
 static GSourceFuncs aio_source_funcs = {
+	/* 
+	 * GMainLoop
+	 * @prepare: before poll() to dispatch()
+	 * @check: after poll() to dispatch()
+	 * @dispatch: goto event source callback
+	 * @finalize: call when the event is finalized
+	 * by shixiao
+	 */
     aio_ctx_prepare,
     aio_ctx_check,
     aio_ctx_dispatch,
@@ -289,13 +325,26 @@ static void aio_rfifolock_cb(void *opaque)
     aio_notify(opaque);
 }
 
+/* Create and fill the contents of a new AioContext
+ * by shixiao
+ */
 AioContext *aio_context_new(Error **errp)
 {
     int ret;
     AioContext *ctx;
+	/* @source_funcs(GSourceFunc): structure containing funcs
+	 *	that implement the sources behavior
+	 * @struct_size(gunit): size contains GSource, min is sizeof(GSource)
+	 * Often paired with g_source_new() in
+	 *	aio_set_event_notifier->aio_set_fd_handler()
+	 * by shixiao
+	 */
     ctx = (AioContext *) g_source_new(&aio_source_funcs, sizeof(AioContext));
+	/* Init the eventfd/pipe channel for AIO communication.
+	 * by shixiao
+	 */
     ret = event_notifier_init(&ctx->notifier, false);
-    if (ret < 0) {
+    if (ret < 0) {	/* If the mechanism creation fails, by shixiao */
         g_source_destroy(&ctx->source);
         error_setg_errno(errp, -ret, "Failed to initialize event notifier");
         return NULL;
@@ -305,8 +354,19 @@ AioContext *aio_context_new(Error **errp)
                            event_notifier_test_and_clear);
     ctx->pollfds = g_array_new(FALSE, FALSE, sizeof(GPollFD));
     ctx->thread_pool = NULL;
+	/* QemuMutex = pthread_mutex_t,
+	 * qemu_mutex_init() ~ pthread_mutex_init()
+	 * by shixiao
+	 */
     qemu_mutex_init(&ctx->bh_lock);
+	/* With qemu_mutex_init() & RFifoLock obj content-filling
+	 * by shixiao
+	 */
     rfifolock_init(&ctx->lock, aio_rfifolock_cb, ctx);
+	/*
+	 * Why it's responsible to init clocks?????
+	 * by shixiao
+	 */
     timerlistgroup_init(&ctx->tlg, aio_timerlist_notify, ctx);
 
     return ctx;

@@ -376,12 +376,19 @@ typedef void (ObjectFree)(void *obj);
 struct ObjectClass
 {
     /*< private >*/
+    /* -> means refers to 
+     * Type -> struct TypeImpl*, 
+     * by shixiao 
+     */
     Type type;
     GSList *interfaces;
 
     const char *object_cast_cache[OBJECT_CLASS_CAST_CACHE];
     const char *class_cast_cache[OBJECT_CLASS_CAST_CACHE];
 
+    /* Use to remove itself from composition tree.
+     * by shixiao
+     */
     ObjectUnparent *unparent;
 };
 

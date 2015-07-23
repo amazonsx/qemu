@@ -189,28 +189,28 @@ typedef struct MonitorQAPIEventState {
 } MonitorQAPIEventState;
 
 struct Monitor {
-    CharDriverState *chr;
+    CharDriverState *chr;	/* Monitor as a CharDevice? by shixiao */
     int reset_seen;
     int flags;
     int suspend_cnt;
     bool skip_flush;
 
-    QemuMutex out_lock;
+    QemuMutex out_lock;	/* Contains a Lock, by shixiao */
     QString *outbuf;
     guint out_watch;
 
     /* Read under either BQL or out_lock, written with BQL+out_lock.  */
     int mux_out;
 
-    ReadLineState *rs;
-    MonitorControl *mc;
-    CPUState *mon_cpu;
-    BlockCompletionFunc *password_completion_cb;
-    void *password_opaque;
-    mon_cmd_t *cmd_table;
-    QError *error;
-    QLIST_HEAD(,mon_fd_t) fds;
-    QLIST_ENTRY(Monitor) entry;
+    ReadLineState *rs;	/* Communicate with Monitor with readline? by shixiao */
+    MonitorControl *mc;	/* Contains a JSONMessageParser, by shixiao */
+    CPUState *mon_cpu;	/* Why a Monitor should care CPU? by shixiao */
+    BlockCompletionFunc *password_completion_cb;	/* What for? by shixiao */
+    void *password_opaque;	/* A Monitor could have a password? by shixiao */
+    mon_cmd_t *cmd_table;	/* Has name, arg_types, parameters, mhandlers. by shixiao */ 
+    QError *error;	/* What Errors? by shixiao */
+    QLIST_HEAD(,mon_fd_t) fds; /* Monitor could be any type with file descriptor? by shixiao */
+    QLIST_ENTRY(Monitor) entry; /* How to choose the objects */
 };
 
 /* QMP checker flags */

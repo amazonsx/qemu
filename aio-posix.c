@@ -71,12 +71,19 @@ void aio_set_fd_handler(AioContext *ctx,
             }
         }
     } else {
+		/* aio_context_new will enter here.
+		 * Create a new AioHandler node and insert int into the list
+		 * by shixiao
+		 */
         if (node == NULL) {
             /* Alloc and insert if it's not already there */
             node = g_malloc0(sizeof(AioHandler));
             node->pfd.fd = fd;
             QLIST_INSERT_HEAD(&ctx->aio_handlers, node, node);
 
+			/* Often Paired with g_source_new() in aio_context_new(),
+			 * by shixiao 
+			 */
             g_source_add_poll(&ctx->source, &node->pfd);
         }
         /* Update handler with latest information */
@@ -94,8 +101,13 @@ void aio_set_fd_handler(AioContext *ctx,
 
 void aio_set_event_notifier(AioContext *ctx,
                             EventNotifier *notifier,
+							/* typedef void EventNotifierHandler(EventNotifer*), by shixiao */
                             EventNotifierHandler *io_read)
 {
+	/* Why just set the io_read with no io_write
+	 * typedef void IOHandler(void*), 
+	 * by shixiao
+	 */
     aio_set_fd_handler(ctx, event_notifier_get_fd(notifier),
                        (IOHandler *)io_read, NULL, notifier);
 }

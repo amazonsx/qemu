@@ -669,10 +669,18 @@ QemuOpts *qemu_opts_create(QemuOptsList *list, const char *id,
             return opts;
         }
     }
+	/* Initialize a new QemuOpts variable from the scratch, 
+	 * by shixiao
+	 */
     opts = g_malloc0(sizeof(*opts));
     opts->id = g_strdup(id);
     opts->list = list;
     loc_save(&opts->loc);
+	/* Initialize <opts> as a list!!!!!!
+	 * It seems that it does the same thing with 
+	 * QTAILQ_HEAD_INITIALIZER, 
+	 * by shixiao 
+	 */
     QTAILQ_INIT(&opts->head);
     QTAILQ_INSERT_TAIL(&list->head, opts, next);
     return opts;

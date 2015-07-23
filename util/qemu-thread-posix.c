@@ -421,10 +421,33 @@ void qemu_thread_create(QemuThread *thread, const char *name,
     int err;
     pthread_attr_t attr;
 
+	/* Join is one way to accomplish synchronization between threads.
+	 * by shixiao
+	 */
+	/* To explicitly create a thread as joinable or detached,  
+	 * Typical 4 Step process it: 
+	 * 1. pthread_attr_t attr
+	 * 2. pthread_attr_init(&attr)
+	 * 3. pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)
+	 * 4. pthread_attr_destory(&attr)
+	 * by shixiao
+	 */
+	/* Init the thread attribute with kernel default setttings
+	 * Paired with pthread_attr_destroy.
+	 * The attrs include: --------------------
+	 * detached/joinable state, scheduling inheritance,
+	 * scheduling policy, scheduling parameters,
+	 * scheduling contention scope,
+	 * stack size, stack address, stack guard(overflow) size
+	 * by shixiao
+	 */
     err = pthread_attr_init(&attr);
     if (err) {
         error_exit(err, __func__);
     }
+	/* QEMU_THREAD_DETACHED/JOINABLE
+	 * by shixiao
+	 */
     if (mode == QEMU_THREAD_DETACHED) {
         err = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
         if (err) {
@@ -434,15 +457,29 @@ void qemu_thread_create(QemuThread *thread, const char *name,
 
     /* Leave signal handling to the iothread.  */
     sigfillset(&set);
+	/* Is it async signal safe than sigprocmask()
+	 * pthread_sigmask vs. sigprocmask:
+	 * 1. generally, pthread_sigmask for multi-threads environment 
+	 *	and sigprocmask for sigle thread environment
+	 * 2. sigprocmask have an effect on the current process 
+	 *	and all its threads will be effected by this.
+	 * by shixiao
+	 */
+	/* So this means all signal blocks ?????? by shixiao*/
     pthread_sigmask(SIG_SETMASK, &set, &oldset);
     err = pthread_create(&thread->thread, &attr, start_routine, arg);
     if (err)
         error_exit(err, __func__);
 
+	/* What the name used for?????? 
+	 * qemu_thread_set_name() says it's used for debug.
+	 * by shixiao
+	 */
     if (name_threads) {
         qemu_thread_set_name(thread, name);
     }
 
+	/* Restore the old signal masks. by shixiao*/
     pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 
     pthread_attr_destroy(&attr);

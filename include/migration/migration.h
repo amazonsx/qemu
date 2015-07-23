@@ -43,13 +43,36 @@ typedef struct MigrationState MigrationState;
 
 struct MigrationState
 {
+    /* @bandwidth_limit: transfer channel limit  
+     * @bytes_xfer: counter
+     * @xfer_limit: ??????
+     * @thread: migrate_thread handler
+     * @cleanup_bh: ???????
+     * @file: not VM image!!!!! It's the Socket fd for migration.
+     * by shixiao
+     */
     int64_t bandwidth_limit;
     size_t bytes_xfer;
     size_t xfer_limit;
-    QemuThread thread;
+    QemuThread thread;	/* QemuThread=pthread_t,by shixiao */
     QEMUBH *cleanup_bh;
     QEMUFile *file;
 
+    /* Migration REAL TIME INFO
+     * @state: !!!!!!
+     * @params: blk copy or not? inc migrate or not?
+     * @mbps: speed??????
+     * @total_time: counter
+     * @downtime: for last suspend
+     * @expected_downtime: theoritical downtime?
+     * @dirty_pages_rate: bitmap
+     * @dirty_bytes_rate: bitmap
+     * @enabled_capabilities: !!!!!!
+     * @xbzrle_cache_size: cache used for xor-based run length encoding
+     * @setup_time: ??????
+     * @dirty_sync_count: ??????
+     * by shixiao
+     */
     int state;
     MigrationParams params;
     double mbps;

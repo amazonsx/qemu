@@ -30,8 +30,12 @@ typedef struct ModuleEntry
 
 typedef QTAILQ_HEAD(, ModuleEntry) ModuleTypeList;
 
+/* Diff between init_type_list and dso_init_list.
+ * by shixiao
+ */
 static ModuleTypeList init_type_list[MODULE_INIT_MAX];
 
+/* What is dso?????? by shixiao*/
 static ModuleTypeList dso_init_list;
 
 static void init_lists(void)

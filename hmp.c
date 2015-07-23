@@ -1280,12 +1280,21 @@ static void hmp_migrate_status_cb(void *opaque)
 
 void hmp_migrate(Monitor *mon, const QDict *qdict)
 {
+	/* Construct parameters of qmp_migrate, defined from qapi-schema.json
+	 * @detach: for compatability
+	 * @blk: do blk migration or not -- fully disk copy
+	 * @inc: do increment blk copy or not, USEFULL!!!!!!!
+	 * @uri: dest vm identified by uri, 
+	 *	later can see kinds of transfer protocols, UNIX\TCP\RDMA\FD\EXEC
+	 * by shixiao
+	 * */
     int detach = qdict_get_try_bool(qdict, "detach", 0);
     int blk = qdict_get_try_bool(qdict, "blk", 0);
     int inc = qdict_get_try_bool(qdict, "inc", 0);
     const char *uri = qdict_get_str(qdict, "uri");
     Error *err = NULL;
 
+	/* !! by shixiao */
     qmp_migrate(uri, !!blk, blk, !!inc, inc, false, false, &err);
     if (err) {
         monitor_printf(mon, "migrate: %s\n", error_get_pretty(err));

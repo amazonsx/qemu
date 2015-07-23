@@ -25,12 +25,25 @@ void event_notifier_init_fd(EventNotifier *e, int fd)
     e->wfd = fd;
 }
 
+/* 
+ * This Routine create a channel for process AIO communication
+ * Use eventfd or pipe to construct the channel.
+ * For overhead efficiency, prior to use eventfd than pipe.
+ * If a eventfd() fails, create a qemu_pipe()
+ * ret the single fd for eventfd or read/write fd pair for pipe.
+ * by shixiao
+ */
 int event_notifier_init(EventNotifier *e, int active)
 {
     int fds[2];
     int ret;
 
 #ifdef CONFIG_EVENTFD
+	/*
+	 * Implement the wait/notify mechanism by user-space apps,
+	 *	and by the kernel to notify user-space apps of events.
+	 * by shixiao
+	 */
     ret = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
 #else
     ret = -1;

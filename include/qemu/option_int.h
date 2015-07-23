@@ -29,6 +29,12 @@
 #include "qemu/option.h"
 #include "qemu/error-report.h"
 
+/*
+ * What these two used for?
+ * qemu_opts_create/qemu_opts_del
+ * Senarios: inet_nonblocking_connect()
+ * by shixiao
+ */
 struct QemuOpt {
     char *name;
     char *str;
@@ -46,8 +52,15 @@ struct QemuOpt {
 struct QemuOpts {
     char *id;
     QemuOptsList *list;
+    /* Singly Linked List, by shixiao */
     Location loc;
+    /* Each QemuOpts is a doubly linked-list with QemuOpt
+     * by shixiao
+     */
     QTAILQ_HEAD(QemuOptHead, QemuOpt) head;
+    /* 
+     * Contains next & prev pointers.
+     */
     QTAILQ_ENTRY(QemuOpts) next;
 };
 

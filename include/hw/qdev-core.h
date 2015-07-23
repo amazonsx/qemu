@@ -157,6 +157,13 @@ struct DeviceState {
     bool pending_deleted_event;
     QemuOpts *opts;
     int hotplugged;
+    /* Each Device is associated with a Bus,
+     * and the buses are constructed as a tree.
+     * There must be a root of the tree.
+     * BTW, there is a device tree defined in Linux
+     * 	check Kernel-Doc-devicetree.
+     * by shixiao
+     */
     BusState *parent_bus;
     QLIST_HEAD(, NamedGPIOList) gpios;
     QLIST_HEAD(, BusState) child_bus;

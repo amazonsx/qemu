@@ -205,8 +205,12 @@ static const QEMUFileOps socket_write_ops = {
 
 QEMUFile *qemu_fopen_socket(int fd, const char *mode)
 {
+	/* With a file(QemuFile) & fd(int), by shixiao */
     QEMUFileSocket *s;
 
+	/* Here, mode[2] with mode[0] in 'r'||'w', 
+	 *	mode[1] in 'b'||0.
+	 * by shixiao*/
     if (qemu_file_mode_is_not_valid(mode)) {
         return NULL;
     }
@@ -214,7 +218,16 @@ QEMUFile *qemu_fopen_socket(int fd, const char *mode)
     s = g_malloc0(sizeof(QEMUFileSocket));
     s->fd = fd;
     if (mode[0] == 'w') {
+		/* fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) ^ ~O_NONBLOCK); 
+		 * Set it to Block mode when writing....
+		 * by shixiao
+		 */
         qemu_set_block(s->fd);
+		/* Return a newly created QEMUFile file,
+		 *	make file->ops = socket_write_ops;
+		 *	make file->opaque = s;
+		 * by shixiao
+		 */
         s->file = qemu_fopen_ops(s, &socket_write_ops);
     } else {
         s->file = qemu_fopen_ops(s, &socket_read_ops);

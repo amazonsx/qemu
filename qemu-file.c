@@ -33,8 +33,14 @@
 #define MAX_IOV_SIZE MIN(IOV_MAX, 64)
 
 struct QEMUFile {
+	/* A Group of Functions Pointers handling 
+	 * Buffers: get_buffer\put_buffer\writev_buffer & 
+	 * QEMUFile: close\get_fd &
+	 * Rams: before_ram_iterate\after_ram_iterate\hook_ram_load\save_page
+	 * by shixiao
+	 */
     const QEMUFileOps *ops;
-    void *opaque;
+    void *opaque; /* Why name it this? Is it a convention? by shixiao*/
 
     int64_t bytes_xfer;
     int64_t xfer_limit;
@@ -45,6 +51,9 @@ struct QEMUFile {
     int buf_size; /* 0 when writing */
     uint8_t buf[IO_BUF_SIZE];
 
+	/* For readv/writev? 
+	 * by shixiao 
+	 */
     struct iovec iov[MAX_IOV_SIZE];
     unsigned int iovcnt;
 

@@ -65,6 +65,10 @@ MigrationState *migrate_get_current(void)
     return &current_migration;
 }
 
+/* Dest/Backup VM Startup Routine
+ * Called by <maine in vl.c
+ * by shixiao
+ */
 void qemu_start_incoming_migration(const char *uri, Error **errp)
 {
     const char *p;
@@ -320,6 +324,7 @@ static void migrate_fd_cleanup(void *opaque)
 
 void migrate_fd_error(MigrationState *s)
 {
+	/* Where are you? by shixiao */
     trace_migrate_fd_error();
     assert(s->file == NULL);
     s->state = MIG_STATE_ERROR;
@@ -385,12 +390,14 @@ static MigrationState *migrate_init(const MigrationParams *params)
 
     s->bandwidth_limit = bandwidth_limit;
     s->state = MIG_STATE_SETUP;
+	/* Where are you? by shixiao */
     trace_migrate_set_state(MIG_STATE_SETUP);
 
     s->total_time = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
     return s;
 }
 
+/* A Single Linked List<void*>, by shixiao */
 static GSList *migration_blockers;
 
 void migrate_add_blocker(Error *reason)
@@ -403,38 +410,65 @@ void migrate_del_blocker(Error *reason)
     migration_blockers = g_slist_remove(migration_blockers, reason);
 }
 
+/* Original VM Migration Entry
+ * Along the migration, check:
+ * 1. qemu_thread_xxx
+ * 2. qemu_bh_xx and AioXxx
+ * 3. SavevmStateEntry and savevm_xxx
+ * 4. TimerXxx
+ * 5. MigrateState_xx
+ * 6. EventNotifier
+ * by shixiao
+ */
 void qmp_migrate(const char *uri, bool has_blk, bool blk,
                  bool has_inc, bool inc, bool has_detach, bool detach,
                  Error **errp)
 {
     Error *local_err = NULL;
-    MigrationState *s = migrate_get_current();
+	/* In migration.c, ret static var current_migration, by shixiao */
+    MigrationState *s = migrate_get_current();	
     MigrationParams params;
     const char *p;
 
     params.blk = has_blk && blk;
     params.shared = has_inc && inc;
 
+	/* Define a enum at the top, by shixiao */
     if (s->state == MIG_STATE_ACTIVE || s->state == MIG_STATE_SETUP ||
         s->state == MIG_STATE_CANCELLING) {
         error_set(errp, QERR_MIGRATION_ACTIVE);
         return;
     }
 
+	/* Impl both in vl.c & runstate-check.c, guess to use vl.c def
+	 * return current_run_state == INPUT, by shixiao */
     if (runstate_check(RUN_STATE_INMIGRATE)) {
         error_setg(errp, "Guest is waiting for an incoming migration");
         return;
     }
 
+	/* Check whether some devices are unmigratable!!!
+	 * VMStateDescription vmsd in SaveStateEntry, 
+	 * @errp may be set blow, why not use *local_err, 
+	 * by shixiao */
     if (qemu_savevm_state_blocked(errp)) {
         return;
     }
 
+	/* When would this HAPPEN?
+	 * migrate_add/delete_blocker operate migration_blockers
+	 * by shixiao*/
     if (migration_blockers) {
         *errp = error_copy(migration_blockers->data);
         return;
     }
 
+	/* Have 3 steps:
+	 * 1. Save current_migration's member: bandwidth-limit\
+	 *	enabled_capabilities\xbzrle_cache_size
+	 * 2. bzero(&current_migration)
+	 * 3. Restore members in 1 and params and total_time
+	 */
     s = migrate_init(&params);
 
     if (strstart(uri, "tcp:", &p)) {
@@ -588,25 +622,29 @@ static void *migration_thread(void *opaque)
     qemu_savevm_state_begin(s->file, &s->params);
 
     s->setup_time = qemu_clock_get_ms(QEMU_CLOCK_HOST) - setup_start;
+	/* compare and swap: atomic_cmpchxg...... by shixiao*/
     migrate_set_state(s, MIG_STATE_SETUP, MIG_STATE_ACTIVE);
 
+	/* Exit Entry is what? by shixiao*/
     while (s->state == MIG_STATE_ACTIVE) {
         int64_t current_time;
         uint64_t pending_size;
 
-        if (!qemu_file_rate_limit(s->file)) {
+        if (!qemu_file_rate_limit(s->file)) { /* The rate limit is 0????? by shixiao */
             pending_size = qemu_savevm_state_pending(s->file, max_size);
             trace_migrate_pending(pending_size, max_size);
-            if (pending_size && pending_size >= max_size) {
+            if (pending_size && pending_size >= max_size) { /* Why this?????? by shixiao */
                 qemu_savevm_state_iterate(s->file);
             } else {
                 int ret;
 
                 qemu_mutex_lock_iothread();
                 start_time = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
+				/* What's its usage?????? by shixiao*/
                 qemu_system_wakeup_request(QEMU_WAKEUP_REASON_OTHER);
                 old_vm_running = runstate_is_running();
 
+				/* To protect the machine ?????? by shixiao*/
                 ret = vm_stop_force_state(RUN_STATE_FINISH_MIGRATE);
                 if (ret >= 0) {
                     qemu_file_set_rate_limit(s->file, INT64_MAX);
@@ -626,17 +664,20 @@ static void *migration_thread(void *opaque)
             }
         }
 
+		/* What kind of errors can these be?????? by shixiao*/
         if (qemu_file_get_error(s->file)) {
             migrate_set_state(s, MIG_STATE_ACTIVE, MIG_STATE_ERROR);
             break;
         }
         current_time = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
-        if (current_time >= initial_time + BUFFER_DELAY) {
+        if (current_time >= initial_time + BUFFER_DELAY) { /* BUFFER_DELAY=100, by shixiao */
+			/* qemu_ftell call qemu_flush & file->pos, by shixiao */
             uint64_t transferred_bytes = qemu_ftell(s->file) - initial_bytes;
             uint64_t time_spent = current_time - initial_time;
             double bandwidth = transferred_bytes / time_spent;
             max_size = bandwidth * migrate_max_downtime() / 1000000;
 
+			/* Convert from b/ms to MB/s, by shixiao*/
             s->mbps = time_spent ? (((double) transferred_bytes * 8.0) /
                     ((double) time_spent / 1000.0)) / 1000.0 / 1000.0 : -1;
 
@@ -674,6 +715,10 @@ static void *migration_thread(void *opaque)
             vm_start();
         }
     }
+	/*Paired with s->cleanup_bh = qemu_bh_new(migrate_fd_cleanup, s)
+	 * in migrate_fd_connect() 
+	 * by shixiao
+	 */
     qemu_bh_schedule(s->cleanup_bh);
     qemu_mutex_unlock_iothread();
 
@@ -682,19 +727,37 @@ static void *migration_thread(void *opaque)
 
 void migrate_fd_connect(MigrationState *s)
 {
+	/* What's the use of this???
+	 *
+	 */
     s->state = MIG_STATE_SETUP;
+	/* Where are you? by shixiao*/
     trace_migrate_set_state(MIG_STATE_SETUP);
 
     /* This is a best 1st approximation. ns to ms */
     s->expected_downtime = max_downtime/1000000;
+	/* Check qemu_bh_schedule(s->cleanup_bh) at bottom in migrate_thread, 
+	 * by shixiao
+	 */
     s->cleanup_bh = qemu_bh_new(migrate_fd_cleanup, s);
 
+	/* file->xfer_limit = xxx, by shixiao */
     qemu_file_set_rate_limit(s->file,
                              s->bandwidth_limit / XFER_LIMIT_RATIO);
 
     /* Notify before starting migration thread */
+	/* Notify Who and Why ?????? by shixiao*/
     notifier_list_notify(&migration_state_notifiers, s);
 
+	/* @1(QemuThread *thread):
+	 * @2(char *name):
+	 * @3(void *start_routine()):
+	 * @4(void *arg):
+	 * @5(int mode)
+	 * Create a pthread with pthread_attr_xxx() 
+	 *	& pthread_thread_create & pthread_sigmask().
+	 * by shixiao
+	 */
     qemu_thread_create(&s->thread, "migration", migration_thread, s,
                        QEMU_THREAD_JOINABLE);
 }

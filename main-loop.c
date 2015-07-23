@@ -131,6 +131,9 @@ void qemu_notify_event(void)
 
 static GArray *gpollfds;
 
+/* 
+ * Init the poll mechanism in GMainLoop.
+ */
 int qemu_init_main_loop(Error **errp)
 {
     int ret;
@@ -504,7 +507,11 @@ int main_loop_wait(int nonblocking)
 
 /* Functions to operate on the main QEMU AioContext.  */
 
+/* When would this be need? by shixiao*/
 QEMUBH *qemu_bh_new(QEMUBHFunc *cb, void *opaque)
 {
+	/* @qemu_aio_context(AioContext): init in qemu_init_main_loop
+	 * by shixiao
+	 */
     return aio_bh_new(qemu_aio_context, cb, opaque);
 }

@@ -221,14 +221,24 @@ typedef struct CompatEntry {
     int instance_id;
 } CompatEntry;
 
+/* Organised as a list, 
+ * what the members used for ??????
+ * by shixiao */
 typedef struct SaveStateEntry {
     QTAILQ_ENTRY(SaveStateEntry) entry;
     char idstr[256];
     int instance_id;
     int alias_id;
     int version_id;
+	/* Do blk device and ram are all has section_id???
+	 * by shixiao
+	 */
     int section_id;
+	/* Register set of funcs handle state-saving.
+	 * What will be needed in it?
+	 * by shixiao */
     SaveVMHandlers *ops;
+	/* Describe ,by shixiao */
     const VMStateDescription *vmsd;
     void *opaque;
     CompatEntry *compat;
@@ -602,6 +612,7 @@ void qemu_savevm_state_begin(QEMUFile *f,
     SaveStateEntry *se;
     int ret;
 
+	/* This may be some kind of tricks, by shixiao */
     trace_savevm_state_begin();
     QTAILQ_FOREACH(se, &savevm_handlers, entry) {
         if (!se->ops || !se->ops->set_params) {
@@ -610,9 +621,30 @@ void qemu_savevm_state_begin(QEMUFile *f,
         se->ops->set_params(params, se->opaque);
     }
 
+	/* So the QemuFile use the be32 format.
+	 * #define QEMU_VM_FILE_MAGIC           0x5145564d
+	 * #define QEMU_VM_FILE_VERSION_COMPAT  0x00000002
+	 * #define QEMU_VM_FILE_VERSION         0x00000003
+	 * by shixiao */
     qemu_put_be32(f, QEMU_VM_FILE_MAGIC);
     qemu_put_be32(f, QEMU_VM_FILE_VERSION);
 
+	/* Q: How are all devices registering with its funcs?
+	 * register_savevm/unregister_savevm()
+	 * <Some> are called by xx_mig_init() funcs.
+	 *	includes: ram_mig_init/blk_mig_init
+	 *	xx_mig_init are called by main in vl.c
+	 * <And the others> are called by something like 
+	 *	hw/net/virtio-net.c 
+	 *	register_savevm
+	 *	<- virtio_net_device_realize
+	 *	<- virito_net_class_init
+	 *	<- virtio_net_info
+	 *	<- virtio_register_types
+	 *	<- type_init(virtio_register_types)
+	 *	<- module_init
+	 * by shixiao
+	 */
     QTAILQ_FOREACH(se, &savevm_handlers, entry) {
         int len;
 

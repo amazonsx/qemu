@@ -55,6 +55,7 @@ struct AioContext {
     RFifoLock lock;
 
     /* The list of registered AIO handlers */
+    /* GPollFd *pfd, by shixiao*/
     QLIST_HEAD(, AioHandler) aio_handlers;
 
     /* This is a simple lock used to protect the aio_handlers list.
@@ -80,6 +81,9 @@ struct AioContext {
     int walking_bh;
 
     /* Used for aio_notify.  */
+    /* Use eventfd or pipe, with rfd/wrd pair
+     * by shixiao 
+     */
     EventNotifier notifier;
 
     /* GPollFDs for aio_poll() */
